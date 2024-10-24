@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "433021966483",
+    "project_id": "learn-98dd2",
+    "storage_bucket": "learn-98dd2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:433021966483:android:f0b45b7e4c847994001566",
+        "android_client_info": {
+          "package_name": "com.gioe.learn"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "433021966483-mc6q4ldkvihv8c77gm3u8dg8jujogipn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwGG7SNxR2bA_cnsYDUKpuZK0uWK6h0bE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "433021966483-mc6q4ldkvihv8c77gm3u8dg8jujogipn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
