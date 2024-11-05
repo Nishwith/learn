@@ -133,7 +133,7 @@ class _EditAccountPageState extends State<EditAccountPage> {
   Future<void> _saveProfileChanges() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
-
+    await uploadProfileImage();
     // Update Firestore with the edited data
     await _firestore.collection('users').doc(userId).update({
       'Full Name': _nameController.text,
@@ -164,7 +164,7 @@ class _EditAccountPageState extends State<EditAccountPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(title: "Edit Profile"),
-      drawer: CustomDrawer(),
+      drawer: const CustomDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
