@@ -44,6 +44,7 @@ class _ResetPasswordState extends State<ResetPassword> {
             controller: _emailTextController,
             isPassword: false,
             typeNumber: false,
+            maxLine: false,
           ),
           const SizedBox(
             height: 40,
@@ -84,6 +85,8 @@ class _ResetPasswordState extends State<ResetPassword> {
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
+          margin: EdgeInsets.all(20),
+          behavior: SnackBarBehavior.floating,
           content:
               Text('Password reset email sent successfully! Check your Mail.'),
           duration: Duration(seconds: 3),
@@ -96,6 +99,8 @@ class _ResetPasswordState extends State<ResetPassword> {
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
+          margin: EdgeInsets.all(20),
+          behavior: SnackBarBehavior.floating,
           content: Text('User Not Found!'),
           duration: Duration(seconds: 3),
         ),

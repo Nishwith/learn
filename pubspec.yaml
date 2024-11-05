@@ -41,7 +41,8 @@ dependencies:
   shared_preferences: ^2.3.2
   google_sign_in: ^6.2.1
   url_launcher: ^6.3.1
-
+  image_picker: ^1.1.2
+  firebase_storage: ^12.3.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -51,7 +52,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^3.0.0
  
 
 # For information on the generic Dart part of this file, see the
@@ -69,6 +70,8 @@ flutter:
   assets:
     - assets/images/logo.webp
     - assets/images/waiting.png
+    - assets/images/avatar1.jpg
+    - assets/images/avatar2.jpg
     # - assets/images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -100,3 +103,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+#appceritificate:30b8e0bd87cb4cd3a8a39e67ab91da5d
+#appid:be13acc813594c1f9c800313984ee726

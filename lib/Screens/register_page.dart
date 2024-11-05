@@ -135,16 +135,14 @@ class _RegisterPageState extends State<RegisterPage> {
               InkWell(
                 onTap: () {
                   setState(() {
-                    skillFieldKeys.add(GlobalKey<
-                        _SkillFieldState>()); // Add new skill field key
-                    skillFields.add(
-                        const SkillField()); // Add a new SkillField instance
+                    skillFieldKeys.add(GlobalKey<_SkillFieldState>());
+                    skillFields.add(const SkillField());
                   });
                 },
                 child: const Text(
                   "+ add 1 more skill",
                   style: TextStyle(
-                      color: Color.fromARGB(255, 12, 12, 255),
+                      color: Color(0xFF1E90FF),
                       fontFamily: "poppins",
                       fontSize: 20),
                 ),
@@ -158,6 +156,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 controller: _skillLearnController,
                 isPassword: false,
                 typeNumber: false,
+                maxLine: false,
               ),
               const SizedBox(
                 height: 10,
@@ -215,7 +214,10 @@ class _RegisterPageState extends State<RegisterPage> {
     if (profession.isEmpty || skillsData.isEmpty || skillsToLearn.isEmpty) {
       // Show an error message (e.g., using a SnackBar)
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        const SnackBar(
+            margin: EdgeInsets.all(20),
+            behavior: SnackBarBehavior.floating,
+            content: Text('Please fill in all fields')),
       );
       return; // Exit if validation fails
     }
@@ -248,7 +250,10 @@ class _RegisterPageState extends State<RegisterPage> {
       });
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration Successful!')),
+        const SnackBar(
+            margin: EdgeInsets.all(20),
+            behavior: SnackBarBehavior.floating,
+            content: Text('Registration Successful!')),
       );
 
       // Clear fields or navigate to another screen if needed
@@ -257,7 +262,10 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (e) {
       // Handle errors appropriately
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration Failed. Please try again.')),
+        const SnackBar(
+            margin: EdgeInsets.all(20),
+            behavior: SnackBarBehavior.floating,
+            content: Text('Registration Failed. Please try again.')),
       );
     } finally {
       // Reset loading state
@@ -313,6 +321,7 @@ class _SkillFieldState extends State<SkillField> {
           controller: _skillNameTextController,
           isPassword: false,
           typeNumber: false,
+          maxLine: false,
         ),
         const SizedBox(height: 10),
         TextFieldWidget(
@@ -320,6 +329,7 @@ class _SkillFieldState extends State<SkillField> {
           controller: _experienceTextController,
           isPassword: false,
           typeNumber: true,
+          maxLine: false,
         ),
         const SizedBox(height: 10),
         TextFieldWidget(
@@ -327,6 +337,7 @@ class _SkillFieldState extends State<SkillField> {
           controller: _portfolioTextController,
           isPassword: false,
           typeNumber: false,
+          maxLine: false,
         ),
         const SizedBox(height: 10),
         // Skill Level Dropdown

@@ -38,8 +38,8 @@ class _LoginPageState extends State<LoginPage> {
           await _auth.signInWithCredential(credential);
       // Check if the user is new
       if (userCredential.additionalUserInfo!.isNewUser) {
-        String? email = userCredential.user?.email;
-        print(email);
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString('uid', FirebaseAuth.instance.currentUser!.uid);
         // ignore: use_build_context_synchronously
         Navigator.pushReplacement(
             context,
@@ -48,6 +48,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SignupPage(authProvider: 'google')));
       } else {
         SharedPreferences prefs = await SharedPreferences.getInstance();
+
         prefs.setString('uid', FirebaseAuth.instance.currentUser!.uid);
         Navigator.pushReplacement(context,
             MaterialPageRoute(builder: (context) => const SplashScreen()));
@@ -90,6 +91,7 @@ class _LoginPageState extends State<LoginPage> {
                 controller: _emailTextController,
                 isPassword: false,
                 typeNumber: false,
+                maxLine: false,
               ),
               const SizedBox(height: 16),
               TextFieldWidget(
@@ -97,6 +99,7 @@ class _LoginPageState extends State<LoginPage> {
                 controller: _passwordTextController,
                 isPassword: true,
                 typeNumber: false,
+                maxLine: false,
               ),
               const SizedBox(height: 16),
               Padding(

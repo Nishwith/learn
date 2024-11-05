@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:learn/Screens/user_gig.dart';
 import 'package:learn/utilities.dart';
@@ -18,44 +17,55 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(title: "LEarn"),
-      drawer: const CustomDrawer(),
+      drawer: CustomDrawer(),
       body: Stack(
         children: [
-          StreamBuilder<QuerySnapshot>(
-            stream: _firestore.collection('gigs').snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return const Center(child: Text('Error fetching gigs'));
-              }
-
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                    child: CircularProgressIndicator(
-                  color: Color.fromRGBO(236, 187, 32, 1),
-                ));
-              }
-
-              // Fetch the gig data
-              final gigDocs = snapshot.data?.docs;
-
-              if (gigDocs == null || gigDocs.isEmpty) {
-                return const Center(child: Text('No gigs available'));
-              }
-
-              // Display the gigs in a ListView
-              return ListView.builder(
-                padding: const EdgeInsets.only(bottom: 100),
-                itemCount: gigDocs.length,
-                itemBuilder: (context, index) {
-                  // Get each gig document data
-                  var gigData = gigDocs[index].data() as Map<String, dynamic>;
-                  var docId = gigDocs[index].id;
-                  return GigCard(gigData: gigData, docId: docId);
-                },
-              );
+          RefreshIndicator(
+            onRefresh: () async {
+              setState(() {});
             },
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _firestore.collection('gigs').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Error fetching gigs'));
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                      child: CircularProgressIndicator(
+                    color: Color.fromRGBO(236, 187, 32, 1),
+                  ));
+                }
+
+                // Fetch the gig data
+                final gigDocs = snapshot.data?.docs;
+
+                if (gigDocs == null || gigDocs.isEmpty) {
+                  return const Center(child: Text('No gigs available'));
+                }
+
+                // Display the gigs in a ListView
+                return ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 100),
+                  itemCount: gigDocs.length,
+                  itemBuilder: (context, index) {
+                    // Get each gig document data
+                    var gigData = gigDocs[index].data() as Map<String, dynamic>;
+                    var docId = gigDocs[index]["userUid"];
+                    if (gigData["status"] == true) {
+                      return GigCard(gigData: gigData, docId: docId);
+                    } else {
+                      return Container();
+                    }
+                  },
+                );
+              },
+            ),
           ),
-          const BottomNavBar(),
+          BottomNavBar(
+            pageIndex: 0,
+          ),
         ],
       ),
     );
@@ -71,10 +81,10 @@ class GigCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String? money = gigData["money"]?.toString();
-    final String? exchangeSkill = gigData["exchange skill"];
+    final String? courseAmount = gigData["courseAmount"]?.toString();
+    final String? exchangeSkill = gigData["exchangeSkill"];
     bool num = false;
-    if (money != null && money != "null" && money != "0") {
+    if (courseAmount != null && courseAmount != "null" && courseAmount != "0") {
       num = true;
     }
     return InkWell(
@@ -91,7 +101,7 @@ class GigCard extends StatelessWidget {
           borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(15),
         child: Column(
           children: [
             Row(
@@ -111,7 +121,7 @@ class GigCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      capitalizeFirstLetter(gigData["skill"] ??
+                      capitalizeFirstLetter(gigData["skillName"] ??
                           "No Skill"), // Fallback if skill is null
                       style: const TextStyle(
                         color: Color.fromRGBO(236, 187, 32, 1),
@@ -125,7 +135,7 @@ class GigCard extends StatelessWidget {
                 ClipOval(
                   child: Image(
                     image: NetworkImage(
-                      gigData["img"] ??
+                      gigData["imageUrl"] ??
                           "https://via.placeholder.com/50", // Placeholder if image URL is null
                     ),
                     height: 50,
@@ -165,9 +175,9 @@ class GigCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 6),
                         child: Text(
-                          '₹$money',
+                          '₹$courseAmount',
                           style: const TextStyle(
-                            color: Color.fromRGBO(236, 187, 32, 1),
+                            color: Color.fromRGBO(0, 0, 0, 1),
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
                             fontFamily: "Poppins",

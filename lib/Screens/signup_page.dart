@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:learn/Screens/home_page.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:learn/Screens/splash_screen.dart';
 import 'package:learn/utilities.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,6 +20,8 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage> {
   late bool isGoogleProvider;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _fullNameTextController = TextEditingController();
   final TextEditingController _emailTextController = TextEditingController();
@@ -62,8 +67,6 @@ class _SignupPageState extends State<SignupPage> {
           await _auth.signInWithCredential(credential);
       // Check if the user is new
       if (userCredential.additionalUserInfo!.isNewUser) {
-        String? email = userCredential.user?.email;
-        print(email);
         // ignore: use_build_context_synchronously
         Navigator.pushReplacement(
             context,
@@ -79,6 +82,35 @@ class _SignupPageState extends State<SignupPage> {
     }
   }
 
+  final ImagePicker _picker = ImagePicker();
+  File? _squareImage;
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 500,
+      maxHeight: 500,
+    );
+    if (pickedFile != null) {
+      setState(() {
+        _squareImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String?> _uploadImage(File imageFile) async {
+    final userUid = FirebaseAuth.instance.currentUser?.uid;
+    if (userUid == null) return null;
+
+    try {
+      final ref = _storage.ref().child('users/$userUid/${DateTime.now()}.jpg');
+      await ref.putFile(imageFile);
+      return await ref.getDownloadURL();
+    } catch (e) {
+      print('Image upload error: $e');
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,6 +121,9 @@ class _SignupPageState extends State<SignupPage> {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              const SizedBox(
+                height: 16,
+              ),
               const SizedBox(
                 height: 16,
               ),
@@ -111,6 +146,19 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ],
               ),
+              GestureDetector(
+                onTap: _pickImage,
+                child: _squareImage == null
+                    ? Container(
+                        width: 100,
+                        height: 100,
+                        color: Colors.grey[300],
+                        child:
+                            const Icon(Icons.add_a_photo, color: Colors.white),
+                      )
+                    : Image.file(_squareImage!,
+                        width: 100, height: 100, fit: BoxFit.cover),
+              ),
               const SizedBox(
                 height: 16,
               ),
@@ -119,6 +167,7 @@ class _SignupPageState extends State<SignupPage> {
                 controller: _fullNameTextController,
                 isPassword: false,
                 typeNumber: false,
+                maxLine: false,
               ),
               const SizedBox(
                 height: 16,
@@ -129,6 +178,7 @@ class _SignupPageState extends State<SignupPage> {
                   controller: _emailTextController,
                   isPassword: false,
                   typeNumber: false,
+                  maxLine: false,
                 ),
               const SizedBox(
                 height: 16,
@@ -138,6 +188,7 @@ class _SignupPageState extends State<SignupPage> {
                 controller: _phoneNumberTextController,
                 isPassword: false,
                 typeNumber: true,
+                maxLine: false,
               ),
               const SizedBox(
                 height: 16,
@@ -150,6 +201,7 @@ class _SignupPageState extends State<SignupPage> {
                       controller: _passwordTextController,
                       isPassword: true,
                       typeNumber: false,
+                      maxLine: false,
                     ),
                     const SizedBox(
                       height: 16,
@@ -159,6 +211,7 @@ class _SignupPageState extends State<SignupPage> {
                       controller: _confirmPasswordTextController,
                       isPassword: true,
                       typeNumber: false,
+                      maxLine: false,
                     ),
                     const SizedBox(
                       height: 16,
@@ -167,10 +220,8 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               InkWell(
                 onTap: () async {
-                  if (_formKey.currentState!.validate()) {
-                    setState(() {
-                      isLoading = true;
-                    });
+                  if (_formKey.currentState!.validate() ||
+                      _squareImage == null) {
                     if (isGoogleProvider) {
                       if (_phoneNumberTextController.text.length != 10) {
                         showDialog(
@@ -203,13 +254,32 @@ class _SignupPageState extends State<SignupPage> {
                                 ],
                               );
                             });
+                      } else if (_squareImage == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Image upload failed. Please try again.')),
+                        );
                       } else {
                         try {
+                          String? imageUrl = await _uploadImage(_squareImage!);
+                          setState(() {
+                            isLoading = true;
+                          });
+                          if (imageUrl == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Image upload failed. Please try again.')),
+                            );
+                            return;
+                          }
                           FirebaseFirestore.instance
                               .collection('users')
                               .doc(FirebaseAuth.instance.currentUser?.uid)
                               .set({
                             'phoneNum': _phoneNumberTextController.text,
+                            'userImg': imageUrl,
                             'email': _emailTextController.text,
                             'Full Name': _fullNameTextController.text,
                             'Registration': "pending"
@@ -290,6 +360,12 @@ class _SignupPageState extends State<SignupPage> {
                                 ],
                               );
                             });
+                      } else if (_squareImage == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Image upload failed. Please try again.')),
+                        );
                       } else if (_passwordTextController.text.length < 8) {
                         showDialog(
                             context: context,
@@ -360,6 +436,18 @@ class _SignupPageState extends State<SignupPage> {
                             email: _emailTextController.text.trim(),
                             password: _passwordTextController.text.trim(),
                           );
+                          String? imageUrl = await _uploadImage(_squareImage!);
+                          setState(() {
+                            isLoading = true;
+                          });
+                          if (imageUrl == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Image upload failed. Please try again.')),
+                            );
+                            return;
+                          }
                           User? user = userCredential.user;
                           FirebaseFirestore.instance
                               .collection('users')
@@ -367,6 +455,7 @@ class _SignupPageState extends State<SignupPage> {
                               .set({
                             'phoneNum': _phoneNumberTextController.text,
                             'email': _emailTextController.text,
+                            'userImg': imageUrl,
                             'Full Name': _fullNameTextController.text,
                             'Registration': "pending"
                           });

@@ -1,13 +1,24 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:learn/Screens/account_page.dart';
+import 'package:learn/Screens/communication_page.dart';
+import 'package:learn/Screens/gig_page.dart';
 import 'package:learn/Screens/home_page.dart';
+import 'package:learn/Screens/splash_screen.dart';
+import 'package:learn/Screens/webinar_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TextFieldWidget extends StatefulWidget {
   final String text;
   final TextEditingController controller;
   final bool isPassword;
+  final bool maxLine;
   final bool typeNumber;
 
   const TextFieldWidget({
@@ -16,6 +27,7 @@ class TextFieldWidget extends StatefulWidget {
     required this.controller,
     required this.isPassword,
     required this.typeNumber,
+    required this.maxLine,
   });
 
   @override
@@ -26,12 +38,14 @@ class TextFieldWidget extends StatefulWidget {
 class _TextFieldWidgetState extends State<TextFieldWidget> {
   bool _isObscured = true;
   bool typeNumber = false;
+  bool maxLine = false;
 
   @override
   void initState() {
     super.initState();
     _isObscured = widget.isPassword;
     typeNumber = widget.typeNumber;
+    maxLine = widget.maxLine;
   }
 
   @override
@@ -44,6 +58,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
             ? <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly]
             : null,
         controller: widget.controller,
+        maxLines: maxLine ? 3 : 1,
         obscureText: widget.isPassword && _isObscured,
         cursorColor: const Color.fromRGBO(236, 187, 32, 1),
         decoration: InputDecoration(
@@ -113,7 +128,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           Scaffold.of(context).openDrawer(); // This will open the Drawer
         },
         icon: const Icon(Icons.menu,
-            size: 30, color: Color.fromRGBO(236, 187, 32, 1)),
+            size: 28, color: Color.fromRGBO(236, 187, 32, 1)),
       ),
       title: Text(
         title,
@@ -144,72 +159,183 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-class CustomDrawer extends StatelessWidget {
+class CustomDrawer extends StatefulWidget {
   const CustomDrawer({super.key});
+
+  @override
+  _CustomDrawerState createState() => _CustomDrawerState();
+}
+
+class _CustomDrawerState extends State<CustomDrawer> {
+  final int randomNumber = Random().nextInt(2) + 1;
+  String? userName;
+  String? userImg;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      setState(() {
+        userName = userDoc['Full Name'];
+        userImg = userDoc['userImg'];
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: Colors.black,
       child: ListView(
-        children: const [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: Color.fromRGBO(236, 187, 32, 1),
+        children: [
+          GestureDetector(
+            onTap: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const AccountPage()));
+            },
+            child: DrawerHeader(
+              decoration: const BoxDecoration(
+                color: Color.fromRGBO(236, 187, 32, 1),
+              ),
+              child: Center(
+                child: Column(
+                  children: [
+                    ClipOval(
+                      child: userImg != null
+                          ? Image.network(
+                              userImg!,
+                              height: 75,
+                              width: 75,
+                              fit: BoxFit.cover,
+                            )
+                          : Image.asset(
+                              "assets/images/avatar$randomNumber.jpg",
+                              height: 75,
+                              width: 75,
+                            ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      userName != null ? "Hello, $userName!" : "Hello!",
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: Text('Header'),
+          ),
+          _buildDrawerItem(
+            context,
+            icon: Icons.home,
+            label: 'Home',
+            page: const HomePage(),
+          ),
+          _buildDrawerItem(
+            context,
+            icon: Icons.campaign,
+            label: 'Campaign gigs',
+            page: const GigPage(),
+          ),
+          _buildDrawerItem(
+            context,
+            icon: Icons.groups,
+            label: 'Webinar',
+            page: const WebinarPage(),
+          ),
+          _buildDrawerItem(
+            context,
+            icon: Icons.chat,
+            label: 'Chat',
+            page: const CommunicationPage(),
+          ),
+          _buildDrawerItem(
+            context,
+            icon: Icons.person_sharp,
+            label: 'Account',
+            page: const AccountPage(),
           ),
           ListTile(
-            title: Text('Item 1'),
-            leading: Icon(Icons.dashboard),
-          ),
-          ListTile(
-            title: Text('Item 2'),
-            leading: Icon(Icons.settings),
+            iconColor: const Color.fromRGBO(236, 187, 32, 1),
+            textColor: const Color.fromRGBO(236, 187, 32, 1),
+            leading: const Icon(Icons.logout),
+            title: const Text('Logout'),
+            onTap: () async {
+              await FirebaseAuth.instance.signOut();
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              prefs.remove('uid');
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const SplashScreen()),
+              );
+            },
           ),
         ],
       ),
     );
   }
+
+  Widget _buildDrawerItem(BuildContext context,
+      {required IconData icon, required String label, required Widget page}) {
+    return ListTile(
+      iconColor: const Color.fromRGBO(236, 187, 32, 1),
+      textColor: const Color.fromRGBO(236, 187, 32, 1),
+      leading: Icon(icon),
+      title: Text(label),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+      },
+    );
+  }
 }
 
 class BottomNavBar extends StatefulWidget {
-  const BottomNavBar({super.key});
+  int pageIndex;
+  BottomNavBar({super.key, required this.pageIndex});
 
   @override
   State<BottomNavBar> createState() => _BottomNavBarState();
 }
 
 class _BottomNavBarState extends State<BottomNavBar> {
-  final List<IconData> navIcons = [
-    Icons.home,
-    Icons.campaign,
-    Icons.groups,
-    Icons.chat,
-    Icons.person_sharp
-  ];
-
-  final List<Widget> screens = [
-    const HomePage(),
-    const GigPage(),
-    const Webinar(),
-    const Communication(),
-    const Account(),
-  ];
-
-  int selectedIndex = 0;
-
-  void onTap(int index) {
-    setState(() {
-      selectedIndex = index;
-    });
-    // print()  ;
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => screens[index]));
-  }
-
   @override
   Widget build(BuildContext context) {
+    final List<IconData> navIcons = [
+      Icons.home,
+      Icons.campaign,
+      Icons.groups,
+      Icons.chat,
+      Icons.person_sharp
+    ];
+
+    final List<Widget> screens = [
+      const HomePage(),
+      const GigPage(),
+      const WebinarPage(),
+      const CommunicationPage(),
+      const AccountPage(),
+    ];
+
+    int selectedIndex = widget.pageIndex;
+
+    void onTap(int index) {
+      setState(() {
+        selectedIndex = index;
+      });
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => screens[index]));
+    }
+
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
@@ -251,56 +377,6 @@ class _BottomNavBarState extends State<BottomNavBar> {
   }
 }
 
-// Dummy Screens for testing
-
-class GigPage extends StatelessWidget {
-  const GigPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-        child: Text(
-      'Gig Page',
-      style: TextStyle(color: Colors.white),
-    ));
-  }
-}
-
-class Webinar extends StatelessWidget {
-  const Webinar({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-        child: Text(
-      'Webinar Page',
-      style: TextStyle(color: Colors.white),
-    ));
-  }
-}
-
-class Communication extends StatelessWidget {
-  const Communication({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-        child: Text(
-      'Communication Page',
-      style: TextStyle(color: Colors.white),
-    ));
-  }
-}
-
-class Account extends StatelessWidget {
-  const Account({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-        child: Text(
-      'Account Page',
-      style: TextStyle(color: Colors.white),
-    ));
-  }
-}
-
 String limitText(String text, int wordLimit) {
   List<String> words = text.split(' ');
   if (words.length > wordLimit) {
@@ -310,10 +386,10 @@ String limitText(String text, int wordLimit) {
   }
 }
 
-Future<void> launchURL(String url) async {
+Future<void> launchURL(Uri url) async {
   // Check if the URL can be launched
-  if (await canLaunchUrl(url as Uri)) {
-    await launchUrl(url as Uri);
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url);
   } else {
     throw 'Could not launch $url';
   }
